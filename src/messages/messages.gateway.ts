@@ -15,7 +15,6 @@ interface SendMessage {
   clientId: string;
   username: string;
   message: string;
-  to?: string;
 }
 
 @WebSocketGateway({ cors: true })
@@ -27,36 +26,45 @@ export class MessagesGateway
   constructor(private readonly messagesService: MessagesService) {}
 
   handleConnection(client: Socket): any {
-    const username: string = client.handshake.headers.username as string;
-    this.messagesService.registerClient(client, username);
-    this.server.emit('user:joined', { username });
-    this.server.emit('user:list', this.messagesService.getConnectedClients());
-    console.log(`User '${username}' connected (ID: '${client.id}')`);
+    try {
+      const username: string = client.handshake.headers.username as string;
+      if (!username) {
+        client.emit('error', { message: 'Username is required' });
+        client.disconnect();
+        return;
+      }
+
+      this.messagesService.registerClient(client, username);
+
+      this.server.emit('user:joined', { username });
+      this.server.emit('user:list', this.messagesService.getConnectedClients());
+    } catch (error) {
+      console.error('Error in handleConnection:', error.message);
+      client.emit('error', { message: 'Connection failed: ' + error.message });
+      client.disconnect();
+    }
   }
 
   handleDisconnect(client: Socket): any {
-    const username = this.messagesService.getUsername(client);
-    this.messagesService.removeClient(client);
-    this.server.emit('user:left', { username });
-    this.server.emit('user:list', this.messagesService.getConnectedClients());
-    console.log(`User '${username}' disconnected (ID: '${client.id}')`);
-  }
+    try {
+      const username = this.messagesService.getUsername(client);
 
-  @SubscribeMessage('message:send')
-  onMessageFromClient(
-    @ConnectedSocket() client: Socket,
-    @MessageBody() data: MessageDto,
-  ) {
-    const username = this.messagesService.getUsername(client);
-    const messageToSend: SendMessage = {
-      clientId: client.id,
-      message: data.message,
-      username,
-    };
-    this.server.emit('message:receive', messageToSend);
-    console.log(
-      `User '${username}' (ID: '${client.id}') sent "${data.message}"`,
-    );
+      if (!username) {
+        this.messagesService.removeClient(client);
+        client.emit('error', { message: 'Username is required' });
+        return;
+      }
+
+      this.messagesService.removeClient(client);
+
+      this.server.emit('user:left', { username });
+      this.server.emit('user:list', this.messagesService.getConnectedClients());
+    } catch (error) {
+      console.error('Error in handleDisconnect:', error.message);
+      client.emit('error', {
+        message: 'Disconnection failed: ' + error.message,
+      });
+    }
   }
 
   @SubscribeMessage('room:join')
@@ -64,19 +72,57 @@ export class MessagesGateway
     @ConnectedSocket() client: Socket,
     @MessageBody() { roomId }: { roomId: string },
   ) {
-    console.log(`Client with id: '${client.id}' joined room '${roomId}'`);
+    const username = this.messagesService.getUsername(client);
+
+    this.messagesService.joinRoom(client, roomId);
+
     client.join(roomId);
+
+    this.server.to(roomId).emit('room:joined', { username });
+    this.server
+      .to(roomId)
+      .emit('room:list', this.messagesService.getClientsInRoom(roomId));
   }
 
-  // @SubscribeMessage('message:private')
-  // onPrivateMessage(
-  //   @ConnectedSocket() client: Socket,
-  //   @MessageBody() { to, message }: { to: string; message: string },
-  // ) {
-  //   console.log(`Private message from ${client.id} to ${to}: "${message}"`);
-  //   this.server
-  //     .to(to)
-  //     .emit('message:private:receive', { from: client.id, message });
+  @SubscribeMessage('room:leave')
+  onRoomLeave(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() { roomId }: { roomId: string },
+  ) {
+    const username = this.messagesService.getUsername(client);
 
-  // }
+    this.messagesService.leaveRoom(client, roomId);
+
+    client.leave(roomId);
+
+    this.server.to(roomId).emit('room:left', { username });
+    this.server
+      .to(roomId)
+      .emit('room:list', this.messagesService.getClientsInRoom(roomId));
+  }
+
+  @SubscribeMessage('message:send')
+  onMessageFromClient(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() data: MessageDto & { roomId?: string },
+  ) {
+    try {
+      const messageToSend: SendMessage = {
+        clientId: client.id,
+        message: data.message,
+        username: this.messagesService.getUsername(client),
+      };
+
+      if (data.roomId) {
+        this.server.to(data.roomId).emit('message:receive', messageToSend);
+      } else {
+        this.server.emit('message:receive', messageToSend);
+      }
+    } catch (error) {
+      console.error('Error in message:send:', error.message);
+      client.emit('error', {
+        message: 'Message sending failed: ' + error.message,
+      });
+    }
+  }
 }

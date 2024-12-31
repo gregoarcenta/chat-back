@@ -4,22 +4,21 @@ import { Socket } from 'socket.io';
 @Injectable()
 export class MessagesService {
   private connectedClients = new Map<string, string>();
-
-  constructor() {}
-
-  // @InjectRepository(User) private readonly userRepository: Repository<User>,
+  private rooms = new Map<string, Set<string>>();
 
   registerClient(client: Socket, username: string) {
-    // const user = await this.userRepository.findOneBy({ id: userId });
-    // if (!user) throw new Error('User not found');
-    // if (!user.isActive) throw new Error('User not active');
-
-    // this.checkUserConnection(user);
     this.connectedClients.set(client.id, username);
   }
 
   removeClient(client: Socket) {
     this.connectedClients.delete(client.id);
+
+    for (const [roomId, members] of this.rooms.entries()) {
+      console.log({ members });
+      if (members.delete(client.id) && members.size === 0) {
+        this.rooms.delete(roomId);
+      }
+    }
   }
 
   getConnectedClients(): string[] {
@@ -30,14 +29,41 @@ export class MessagesService {
     return this.connectedClients.get(client.id);
   }
 
-  // private checkUserConnection(user: User) {
-  //   for (const clientId of Object.keys(this.connectedClients)) {
-  //     const connectedClient = this.connectedClients[clientId];
-  //
-  //     if (connectedClient.user.id === user.id) {
-  //       connectedClient.socket.disconnect();
-  //       break;
-  //     }
-  //   }
-  // }
+  joinRoom(client: Socket, roomId: string) {
+    try {
+      if (!this.rooms.has(roomId)) this.rooms.set(roomId, new Set());
+      this.rooms.get(roomId).add(client.id);
+    } catch (error) {
+      console.error('Error joining room:', error.message);
+      client.emit('error', {
+        message: 'Failed to join room: ' + error.message,
+      });
+    }
+  }
+
+  leaveRoom(client: Socket, roomId: string) {
+    try {
+      if (this.rooms.has(roomId)) {
+        const members = this.rooms.get(roomId);
+        members.delete(client.id);
+
+        if (members.size === 0) {
+          this.rooms.delete(roomId);
+        }
+      }
+    } catch (error) {
+      console.error('Error leaving room:', error.message);
+      client.emit('error', {
+        message: 'Failed to leave room: ' + error.message,
+      });
+    }
+  }
+
+  getClientsInRoom(roomId: string): string[] {
+    if (this.rooms.has(roomId)) {
+      const clientIds = Array.from(this.rooms.get(roomId));
+      return clientIds.map((clientId) => this.connectedClients.get(clientId));
+    }
+    return [];
+  }
 }
