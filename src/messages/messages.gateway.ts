@@ -9,7 +9,7 @@ import {
 } from '@nestjs/websockets';
 import { MessagesService } from './messages.service';
 import { Server, Socket } from 'socket.io';
-import { MessageDto } from './dto/create-message.dto';
+import { MessageDto } from './dto/message.dto';
 
 interface SendMessage {
   clientId: string;
@@ -28,6 +28,7 @@ export class MessagesGateway
   handleConnection(client: Socket): any {
     try {
       const username: string = client.handshake.headers.username as string;
+
       if (!username) {
         client.emit('error', { message: 'Username is required' });
         client.disconnect();

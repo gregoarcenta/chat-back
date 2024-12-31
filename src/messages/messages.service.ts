@@ -14,7 +14,6 @@ export class MessagesService {
     this.connectedClients.delete(client.id);
 
     for (const [roomId, members] of this.rooms.entries()) {
-      console.log({ members });
       if (members.delete(client.id) && members.size === 0) {
         this.rooms.delete(roomId);
       }
