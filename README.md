@@ -20,7 +20,7 @@ Proporciona funcionalidades esenciales para la gestión de usuarios, salas de ch
 
 ## Endpoints
 
-Este backend funciona exclusivamente con WebSockets. Algunos eventos destacados son:
+El backend funciona exclusivamente con WebSockets. Algunos eventos destacados son:
 
 ### Eventos Principales
 
@@ -48,7 +48,8 @@ Este backend funciona exclusivamente con WebSockets. Algunos eventos destacados 
 
 ## Pruebas
 
-Este proyecto incluye pruebas unitarias con **Jest**. Para ejecutar las pruebas:
+Este proyecto incluye pruebas unitarias con **Jest**. Navegar a la carpeta del backend: `cd backend` o frontend
+`cd frontend` y ejecutar:
 
 ```bash
 npm run test
