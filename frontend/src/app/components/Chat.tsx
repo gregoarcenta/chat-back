@@ -3,15 +3,17 @@ import { Socket } from 'socket.io-client';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
 import { useMessages, UserMessage } from '@/context/MessagesContext.tsx';
+import { Popover, PopoverContent, PopoverTrigger } from '@/ui/popover.tsx';
 
 interface ChatProps {
   socket: Socket;
   username: string;
   room: string;
+  password?: string;
   handleLeaveRoom: () => void;
 }
 
-export default function Chat({ socket, username, room, handleLeaveRoom }: ChatProps) {
+export default function Chat({ socket, username, room, password, handleLeaveRoom }: ChatProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<UserMessage[]>([]);
   const { privateMessages, setPrivateMessages } = useMessages();
@@ -80,12 +82,40 @@ export default function Chat({ socket, username, room, handleLeaveRoom }: ChatPr
     }
   };
   
+  const handleCopy = (text: string) => {
+    navigator.clipboard.writeText(text);
+    alert('¡Contraseña copiada al portapapeles!');
+  };
+  
   return (
     <div className="flex flex-col h-full">
-      <div className="bg-white p-4 border-b">
+      <div className="bg-white p-4 border-b flex justify-between">
         <h2 className="text-xl font-bold">
           {room === 'global' ? 'Chat Global' : `Sala Privada: ${room}`}
         </h2>
+        {room !== 'global' && password && (
+          <Popover>
+            <PopoverTrigger asChild>
+              <Button variant="outline">Más</Button>
+            </PopoverTrigger>
+            <PopoverContent>
+              <div className="p-4 space-y-2">
+                <div>
+                  <strong>ID de sala:</strong> {room}
+                </div>
+                <div>
+                  <strong>Contraseña:</strong>
+                  <span
+                    className="ml-2 cursor-pointer text-blue-500"
+                    onClick={() => handleCopy(password!)}
+                  >
+                  {password} (Copia)
+              </span>
+                </div>
+              </div>
+            </PopoverContent>
+          </Popover>
+        )}
       </div>
       <div className="flex-1 overflow-y-auto p-4">
         {room === 'global' ? messages.map((msg, index) => (

@@ -17,6 +17,7 @@ export default function ChatPage() {
   const [error, setError] = useState<Error | null>(null);
   const [username, setUsername] = useState('');
   const [room, setRoom] = useState('global');
+  const [roomPassword, setRoomPassword] = useState('');
   const [users, setUsers] = useState([]);
   const [usersInRoom, setUsersInRoom] = useState([]);
   const [isSocketReady, setIsSocketReady] = useState(false);
@@ -55,21 +56,26 @@ export default function ChatPage() {
     clearPrivateMessages();
     setUsersInRoom([]);
     socket.emit('room:leave', { roomId: room });
+    
     const roomId = `private-${Date.now()}`;
     socket.emit('room:create', { roomId, password });
     setRoom(roomId);
+    setRoomPassword(password);
   };
   
   const handleJoinRoom = (roomId: string, password: string) => {
     clearPrivateMessages();
     setUsersInRoom([]);
+    setRoomPassword('');
     socket.emit('room:leave', { roomId: room });
+    
     socket.emit('room:join', { roomId, password });
     setRoom(roomId);
   };
   
   const confirmLeaveRoom = () => {
     socket.emit('room:leave', { roomId: room });
+    setRoomPassword('');
     setRoom('global');
     clearPrivateMessages();
     setUsersInRoom([]);
@@ -96,7 +102,8 @@ export default function ChatPage() {
       </div>
       <div className="w-full md:w-3/4 flex-grow flex flex-col">
         {isSocketReady && (
-          <Chat socket={socket} username={username} room={room} handleLeaveRoom={handleLeaveRoom} />
+          <Chat socket={socket} username={username} room={room} password={roomPassword}
+                handleLeaveRoom={handleLeaveRoom} />
         )}
       </div>
       <Dialog open={showLeaveConfirmation} onOpenChange={setShowLeaveConfirmation}>
