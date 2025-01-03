@@ -34,15 +34,13 @@ export default function ChatPage() {
       });
       
       socket.on('room:users', (updatedRooms) => {
-        console.log(updatedRooms);
         setUsersInRoom(updatedRooms);
       });
       
-      return () => {
-        socket.off('connect');
-        socket.off('user:list');
-        socket.off('room:list');
-      };
+      socket.on('exception', (error) => {
+        confirmLeaveRoom();
+        alert(error.message);
+      });
     }
   }, [username, room]);
   
@@ -55,7 +53,7 @@ export default function ChatPage() {
     setUsersInRoom([]);
     socket.emit('room:leave', { roomId: room });
     const roomId = `private-${Date.now()}`;
-    socket.emit('room:join', { roomId, password });
+    socket.emit('room:create', { roomId, password });
     setRoom(roomId);
   };
   

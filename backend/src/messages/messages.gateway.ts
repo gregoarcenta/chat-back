@@ -6,6 +6,7 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
+  WsException,
 } from '@nestjs/websockets';
 import { MessagesService } from './messages.service';
 import { Server, Socket } from 'socket.io';
@@ -68,14 +69,33 @@ export class MessagesGateway
     }
   }
 
+  @SubscribeMessage('room:create')
+  onRoomCreate(
+    @ConnectedSocket() client: Socket,
+    @MessageBody() { roomId, password }: { roomId: string; password: string },
+  ) {
+    if (!this.messagesService.hasRoom(roomId)) {
+      this.messagesService.createRoom(roomId, password);
+    }
+    this.onRoomJoin(client, { roomId, password });
+  }
+
   @SubscribeMessage('room:join')
   onRoomJoin(
     @ConnectedSocket() client: Socket,
-    @MessageBody() { roomId }: { roomId: string },
+    @MessageBody() { roomId, password }: { roomId: string; password: string },
   ) {
     const username = this.messagesService.getUsername(client);
 
-    this.messagesService.joinRoom(client, roomId);
+    if (!this.messagesService.hasRoom(roomId)) {
+      throw new WsException(`La sala ${roomId} no fue encontrada`);
+    }
+
+    try {
+      this.messagesService.joinRoom(client, roomId, password);
+    } catch (error) {
+      throw new WsException(error.message);
+    }
 
     client.join(roomId);
 

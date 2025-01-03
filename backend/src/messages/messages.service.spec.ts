@@ -40,7 +40,8 @@ describe('MessagesService', () => {
     const mockClient = { id: '123' } as Socket;
 
     service.registerClient(mockClient, 'testUser');
-    service.joinRoom(mockClient, 'room1');
+    service.createRoom('room1', '123');
+    service.joinRoom(mockClient, 'room1', '123');
 
     service.removeClient(mockClient);
 
@@ -50,8 +51,10 @@ describe('MessagesService', () => {
 
   it('should add a client to a room', () => {
     const mockClient = { id: '123' } as Socket;
+
     service.registerClient(mockClient, 'testUser');
-    service.joinRoom(mockClient, 'room1');
+    service.createRoom('room1', '123');
+    service.joinRoom(mockClient, 'room1', '123');
 
     const clientsInRoom = service.getClientsInRoom('room1');
     expect(clientsInRoom).toContain('testUser');
@@ -59,16 +62,19 @@ describe('MessagesService', () => {
 
   it('should not throw an error if the room already exists', () => {
     const mockClient = { id: '123' } as Socket;
-    service.registerClient(mockClient, 'testUser');
-    service.joinRoom(mockClient, 'room1');
 
-    expect(() => service.joinRoom(mockClient, 'room1')).not.toThrow();
+    service.registerClient(mockClient, 'testUser');
+    service.createRoom('room1', '123');
+    service.joinRoom(mockClient, 'room1', '123');
+
+    expect(() => service.joinRoom(mockClient, 'room1', '123')).not.toThrow();
   });
 
   it('should remove a client from a room', () => {
     const mockClient = { id: '123' } as Socket;
     service.registerClient(mockClient, 'testUser');
-    service.joinRoom(mockClient, 'room1');
+    service.createRoom('room1', '123');
+    service.joinRoom(mockClient, 'room1', '123');
     service.leaveRoom(mockClient, 'room1');
 
     const clientsInRoom = service.getClientsInRoom('room1');
@@ -78,7 +84,9 @@ describe('MessagesService', () => {
   it('should delete the room if it becomes empty', () => {
     const mockClient = { id: '123' } as Socket;
     service.registerClient(mockClient, 'testUser');
-    service.joinRoom(mockClient, 'room1');
+
+    service.createRoom('room1', '123');
+    service.joinRoom(mockClient, 'room1', '123');
     service.leaveRoom(mockClient, 'room1');
 
     expect(service.getClientsInRoom('room1')).toHaveLength(0);
@@ -102,8 +110,10 @@ describe('MessagesService', () => {
     service.registerClient(mockClient1, 'user1');
     service.registerClient(mockClient2, 'user2');
 
-    service.joinRoom(mockClient1, 'room1');
-    service.joinRoom(mockClient2, 'room1');
+    service.createRoom('room1', '123');
+
+    service.joinRoom(mockClient1, 'room1', '123');
+    service.joinRoom(mockClient2, 'room1', '123');
 
     const clientsInRoom = service.getClientsInRoom('room1');
     expect(clientsInRoom).toEqual(['user1', 'user2']);

@@ -100,10 +100,11 @@ describe('MessagesGateway', () => {
     jest.spyOn(service, 'getUsername').mockReturnValue('testUser');
 
     const roomId = 'room1';
+    const password = '123';
+    service.createRoom(roomId, password);
+    gateway.onRoomJoin(mockClient, { roomId, password });
 
-    gateway.onRoomJoin(mockClient, { roomId });
-
-    expect(service.joinRoom).toHaveBeenCalledWith(mockClient, roomId);
+    expect(service.joinRoom).toHaveBeenCalledWith(mockClient, roomId, password);
     expect(mockServer.to).toHaveBeenCalledWith(roomId);
     expect(mockServer.to(roomId).emit).toHaveBeenNthCalledWith(
       1,
