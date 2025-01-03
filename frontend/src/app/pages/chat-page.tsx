@@ -79,7 +79,6 @@ export default function ChatPage() {
     setShowLeaveConfirmation(true);
   };
   
-  
   if (!username) {
     return <Login onLogin={handleLogin} />;
   }
@@ -96,14 +95,7 @@ export default function ChatPage() {
       </div>
       <div className="w-full md:w-3/4 flex-grow flex flex-col">
         {isSocketReady && (
-          <Chat socket={socket} username={username} room={room} />
-        )}
-        {room !== 'global' && (
-          <div className="p-4 bg-white border-t">
-            <Button onClick={handleLeaveRoom} variant="destructive">
-              Abandonar Sala
-            </Button>
-          </div>
+          <Chat socket={socket} username={username} room={room} handleLeaveRoom={handleLeaveRoom} />
         )}
       </div>
       <Dialog open={showLeaveConfirmation} onOpenChange={setShowLeaveConfirmation}>

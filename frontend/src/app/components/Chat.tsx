@@ -8,9 +8,10 @@ interface ChatProps {
   socket: Socket;
   username: string;
   room: string;
+  handleLeaveRoom: () => void;
 }
 
-export default function Chat({ socket, username, room }: ChatProps) {
+export default function Chat({ socket, username, room, handleLeaveRoom }: ChatProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<UserMessage[]>([]);
   const { privateMessages, setPrivateMessages } = useMessages();
@@ -150,6 +151,13 @@ export default function Chat({ socket, username, room }: ChatProps) {
           <Button type="submit" className="w-full sm:w-auto">Enviar</Button>
         </div>
       </form>
+      {room !== 'global' && (
+        <div className="p-4 bg-white border-t">
+          <Button onClick={handleLeaveRoom} variant="destructive">
+            Abandonar Sala
+          </Button>
+        </div>
+      )}
     </div>
   );
 }
