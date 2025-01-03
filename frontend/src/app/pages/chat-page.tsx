@@ -9,10 +9,12 @@ import UserList from '@/components/UserList';
 import { Button } from '@/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/ui/dialog';
 import { useMessages } from '@/context/MessagesContext.tsx';
+import ErrorDialog from '@/components/errorDialog.tsx';
 
 let socket: Socket;
 
 export default function ChatPage() {
+  const [error, setError] = useState<Error | null>(null);
   const [username, setUsername] = useState('');
   const [room, setRoom] = useState('global');
   const [users, setUsers] = useState([]);
@@ -39,7 +41,8 @@ export default function ChatPage() {
       
       socket.on('exception', (error) => {
         confirmLeaveRoom();
-        alert(error.message);
+        setError(error);
+        // alert(error.message);
       });
     }
   }, [username, room]);
@@ -110,6 +113,7 @@ export default function ChatPage() {
           </div>
         </DialogContent>
       </Dialog>
+      <ErrorDialog error={error} onClose={() => setError(null)} />
     </div>
   );
 }
