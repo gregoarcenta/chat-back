@@ -26,7 +26,8 @@ export default function ChatPage() {
   
   useEffect(() => {
     if (username && !socket) {
-      socket = io('http://localhost:3000', { extraHeaders: { username } });
+      // socket = io('http://localhost:3000', { extraHeaders: { username } });
+      socket = io('https://chat-back-ghjf.onrender.com', { extraHeaders: { username } });
       
       socket.on('connect', () => {
         setIsSocketReady(true);
@@ -88,6 +89,15 @@ export default function ChatPage() {
   
   if (!username) {
     return <Login onLogin={handleLogin} />;
+  }
+  
+  if (!isSocketReady) {
+    return (
+      <div className="flex flex-col space-y-4 justify-center items-center h-screen">
+        <div className="spinner"></div>
+        <p>Cargando chat, por favor, espere...</p>
+      </div>
+    );
   }
   
   return (
