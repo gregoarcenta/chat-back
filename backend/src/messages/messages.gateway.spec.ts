@@ -111,7 +111,7 @@ describe('MessagesGateway', () => {
       { username: 'testUser' },
     );
     expect(mockServer.to(roomId).emit).toHaveBeenLastCalledWith(
-      'room:list',
+      'room:users',
       expect.anything(),
     );
   });
@@ -130,7 +130,7 @@ describe('MessagesGateway', () => {
       username: 'testUser',
     });
     expect(mockServer.to(roomId).emit).toHaveBeenLastCalledWith(
-      'room:list',
+      'room:users',
       expect.anything(),
     );
   });
@@ -157,7 +157,7 @@ describe('MessagesGateway', () => {
 
     expect(mockServer.to).toHaveBeenCalledWith('room1');
     expect(mockServer.to('room1').emit).toHaveBeenCalledWith(
-      'message:receive',
+      'message:receive:private',
       {
         clientId: mockClient.id,
         message: 'Hello World',

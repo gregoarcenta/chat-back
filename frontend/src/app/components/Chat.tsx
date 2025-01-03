@@ -2,6 +2,7 @@ import React, { useEffect, useRef, useState } from 'react';
 import { Socket } from 'socket.io-client';
 import { Button } from '@/ui/button';
 import { Input } from '@/ui/input';
+import { useMessages, UserMessage } from '@/context/MessagesContext.tsx';
 
 interface ChatProps {
   socket: Socket;
@@ -9,22 +10,19 @@ interface ChatProps {
   room: string;
 }
 
-interface UserMessage {
-  clientId?: string;
-  username: string;
-  message?: string;
-  join?: boolean;
-  left?: boolean;
-}
-
 export default function Chat({ socket, username, room }: ChatProps) {
   const [message, setMessage] = useState('');
   const [messages, setMessages] = useState<UserMessage[]>([]);
+  const { privateMessages, setPrivateMessages } = useMessages();
   const messagesEndRef = useRef<HTMLDivElement>(null);
   
   useEffect(() => {
     socket.on('message:receive', (message: UserMessage) => {
       setMessages((prevMessages) => [...prevMessages, message]);
+    });
+    
+    socket.on('message:receive:private', (message: UserMessage) => {
+      setPrivateMessages((prevMessages) => [...prevMessages, message]);
     });
     
     socket.on('user:joined', ({ username }: { username: string }) => {
@@ -35,6 +33,14 @@ export default function Chat({ socket, username, room }: ChatProps) {
       setMessages((prevMessages) => [...prevMessages, joinUser]);
     });
     
+    socket.on('room:joined', ({ username }: { username: string }) => {
+      const joinUser: UserMessage = {
+        join: true,
+        username,
+      };
+      setPrivateMessages((prevMessages) => [...prevMessages, joinUser]);
+    });
+    
     socket.on('user:left', ({ username }: { username: string }) => {
       const leftUser: UserMessage = {
         left: true,
@@ -43,21 +49,32 @@ export default function Chat({ socket, username, room }: ChatProps) {
       setMessages((prevMessages) => [...prevMessages, leftUser]);
     });
     
+    socket.on('room:left', ({ username }: { username: string }) => {
+      const leftUser: UserMessage = {
+        left: true,
+        username,
+      };
+      setPrivateMessages((prevMessages) => [...prevMessages, leftUser]);
+    });
+    
     return () => {
+      socket.off('message:receive:private');
       socket.off('message:receive');
       socket.off('user:joined');
       socket.off('user:left');
+      socket.off('room:joined');
+      socket.off('room:left');
     };
   }, []);
   
   useEffect(() => {
     messagesEndRef.current?.scrollIntoView({ behavior: 'smooth' });
-  }, [messages]);
+  }, [messages, privateMessages]);
   
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault();
     if (message) {
-      socket.emit('message:send', { message });
+      socket.emit('message:send', { message, roomId: room === 'global' ? null : room });
       setMessage('');
     }
   };
@@ -70,7 +87,7 @@ export default function Chat({ socket, username, room }: ChatProps) {
         </h2>
       </div>
       <div className="flex-1 overflow-y-auto p-4">
-        {messages.map((msg, index) => (
+        {room === 'global' ? messages.map((msg, index) => (
           <div key={index} className={`mb-2 ${msg.username === username ? 'text-right' : 'text-left'}`}>
             {msg.join && (
               <>
@@ -88,12 +105,37 @@ export default function Chat({ socket, username, room }: ChatProps) {
               <>
                 <span className="font-bold text-sm">{msg.username}: </span>
                 <span className="inline-block bg-gray-200 rounded-lg py-2 px-3 max-w-[80%] break-words">
-                  {msg.message}
-                </span>
+            {msg.message}
+          </span>
               </>
             )}
           </div>
-        ))}
+        )) : privateMessages.map((msg, index) => (
+          <div key={index} className={`mb-2 ${msg.username === username ? 'text-right' : 'text-left'}`}>
+            {msg.join && (
+              <>
+                <span className="font-bold text-sm text-green-500">{msg.username} </span>
+                <span>se ha unido a la sala</span>
+              </>
+            )}
+            {msg.left && (
+              <>
+                <span className="font-bold text-sm text-red-500">{msg.username} </span>
+                <span>ha salido de la sala</span>
+              </>
+            )}
+            {msg.message && (
+              <>
+                <span className="font-bold text-sm">{msg.username}: </span>
+                <span className="inline-block bg-gray-200 rounded-lg py-2 px-3 max-w-[80%] break-words">
+            {msg.message}
+          </span>
+              </>
+            )}
+          </div>
+        ))
+        }
+        
         <div ref={messagesEndRef} />
       </div>
       <form onSubmit={handleSubmit} className="p-4 bg-white border-t">

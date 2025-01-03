@@ -1,8 +1,11 @@
 import ChatPage from '@/pages/chat-page.tsx';
+import { MessagesProvider } from '@/context/MessagesContext.tsx';
 
 function App() {
   return (
-    <ChatPage />
+    <MessagesProvider>
+      <ChatPage />
+    </MessagesProvider>
   );
 }
 

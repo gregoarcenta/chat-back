@@ -82,7 +82,7 @@ export class MessagesGateway
     this.server.to(roomId).emit('room:joined', { username });
     this.server
       .to(roomId)
-      .emit('room:list', this.messagesService.getClientsInRoom(roomId));
+      .emit('room:users', this.messagesService.getClientsInRoom(roomId));
   }
 
   @SubscribeMessage('room:leave')
@@ -99,7 +99,7 @@ export class MessagesGateway
     this.server.to(roomId).emit('room:left', { username });
     this.server
       .to(roomId)
-      .emit('room:list', this.messagesService.getClientsInRoom(roomId));
+      .emit('room:users', this.messagesService.getClientsInRoom(roomId));
   }
 
   @SubscribeMessage('message:send')
@@ -115,7 +115,9 @@ export class MessagesGateway
       };
 
       if (data.roomId) {
-        this.server.to(data.roomId).emit('message:receive', messageToSend);
+        this.server
+          .to(data.roomId)
+          .emit('message:receive:private', messageToSend);
       } else {
         this.server.emit('message:receive', messageToSend);
       }

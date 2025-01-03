@@ -8,6 +8,7 @@ import RoomList from '@/components/RoomList';
 import UserList from '@/components/UserList';
 import { Button } from '@/ui/button';
 import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from '@/ui/dialog';
+import { useMessages } from '@/context/MessagesContext.tsx';
 
 let socket: Socket;
 
@@ -15,26 +16,26 @@ export default function ChatPage() {
   const [username, setUsername] = useState('');
   const [room, setRoom] = useState('global');
   const [users, setUsers] = useState([]);
-  const [, setRooms] = useState(['global']);
+  const [usersInRoom, setUsersInRoom] = useState([]);
   const [isSocketReady, setIsSocketReady] = useState(false);
   const [showLeaveConfirmation, setShowLeaveConfirmation] = useState(false);
+  const { clearPrivateMessages } = useMessages();
   
   useEffect(() => {
     if (username && !socket) {
       socket = io('http://localhost:3000', { extraHeaders: { username } });
-      // socket.emit('join', { username, room });
       
       socket.on('connect', () => {
         setIsSocketReady(true);
       });
       
       socket.on('user:list', (updatedUsers) => {
-        // console.log(updatedUsers);
         setUsers(updatedUsers);
       });
       
-      socket.on('room:list', (updatedRooms) => {
-        setRooms(updatedRooms);
+      socket.on('room:users', (updatedRooms) => {
+        console.log(updatedRooms);
+        setUsersInRoom(updatedRooms);
       });
       
       return () => {
@@ -50,25 +51,34 @@ export default function ChatPage() {
   };
   
   const handleCreateRoom = (password: string) => {
-    const newRoom = `private-${Date.now()}`;
-    socket!.emit('createRoom', { username, newRoom, password });
-    setRoom(newRoom);
+    clearPrivateMessages();
+    setUsersInRoom([]);
+    socket.emit('room:leave', { roomId: room });
+    const roomId = `private-${Date.now()}`;
+    socket.emit('room:join', { roomId, password });
+    setRoom(roomId);
   };
   
   const handleJoinRoom = (roomId: string, password: string) => {
+    clearPrivateMessages();
+    setUsersInRoom([]);
+    socket.emit('room:leave', { roomId: room });
     socket.emit('room:join', { roomId, password });
     setRoom(roomId);
+  };
+  
+  const confirmLeaveRoom = () => {
+    socket.emit('room:leave', { roomId: room });
+    setRoom('global');
+    clearPrivateMessages();
+    setUsersInRoom([]);
+    setShowLeaveConfirmation(false);
   };
   
   const handleLeaveRoom = () => {
     setShowLeaveConfirmation(true);
   };
   
-  const confirmLeaveRoom = () => {
-    socket!.emit('room:leave', { username, room });
-    setRoom('global');
-    setShowLeaveConfirmation(false);
-  };
   
   if (!username) {
     return <Login onLogin={handleLogin} />;
@@ -77,7 +87,7 @@ export default function ChatPage() {
   return (
     <div className="flex flex-col md:flex-row h-screen bg-gray-100">
       <div className="w-full md:w-1/4 bg-white p-4 border-b md:border-r md:border-b-0">
-        <UserList users={users} />
+        <UserList users={users} usersInRoom={usersInRoom} room={room} />
         <RoomList
           currentRoom={room}
           onCreateRoom={handleCreateRoom}
