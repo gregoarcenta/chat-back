@@ -36,20 +36,21 @@ El backend funciona exclusivamente con WebSockets. Algunos eventos destacados so
 
 1. Clona este repositorio.
 2. Navega a la carpeta del backend: `cd backend`.
-3. Instala las dependencias: `npm install`.
-4. Ejecuta el servidor: `npm run start`.
+3. Instala las dependencias: `pnpm install`.
+4. Ejecuta el servidor: `pnpm start`.
 
 ### Frontend (React)
 
 1. Clona este repositorio.
 2. Navega a la carpeta del frontend: `cd frontend`.
-3. Instala las dependencias: `npm install`.
-4. Ejecuta el cliente: `npm start`.
+3. Instala las dependencias: `pnpm install`.
+4. Crea un archivo `.env` en la raiz dentro de la carpeta frontend
+5. Modifica el archivo `.env` agregando `VITE_URL=http://localhost:3000`
+4. Ejecuta el cliente: `pnpm dev`.
 
 ## Pruebas
 
-Este proyecto incluye pruebas unitarias con **Jest**. Navegar a la carpeta del backend: `cd backend` o frontend
-`cd frontend` y ejecutar:
+Este proyecto incluye pruebas unitarias con **Jest**. Navegar a la carpeta del backend: `cd backend` y ejecutar:
 
 ```bash
 npm run test
