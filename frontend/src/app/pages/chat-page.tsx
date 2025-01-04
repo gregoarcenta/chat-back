@@ -26,8 +26,8 @@ export default function ChatPage() {
   
   useEffect(() => {
     if (username && !socket) {
-      // socket = io('http://localhost:3000', { extraHeaders: { username } });
-      socket = io('https://chat-back-ghjf.onrender.com', { extraHeaders: { username } });
+      const url = import.meta.env.VITE_URL;
+      socket = io(url, { extraHeaders: { username } });
       
       socket.on('connect', () => {
         setIsSocketReady(true);
